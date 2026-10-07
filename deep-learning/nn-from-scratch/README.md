@@ -22,10 +22,17 @@ gradient descent, and a complete XOR training flow.
 
 ## Run a use case
 
-After cloning the repository, enter the use-case directory and run the desired
-file. Dependencies such as NumPy and Matplotlib are the user's responsibility.
+After cloning the repository, enter the use-case directory and run whichever
+example you want. Dependencies such as NumPy, Matplotlib, and scikit-learn are
+the user's responsibility.
 
 ```bash
 cd deep-learning/nn-from-scratch/usecases
+
 python xor.py
+python circles.py
+python two_moons.py
+python iris.py
+python sine_regression.py
+python digits_0_vs_1.py
 ```
