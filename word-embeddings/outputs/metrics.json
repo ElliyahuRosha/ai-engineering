@@ -1,0 +1,638 @@
+{
+  "run": "outputs",
+  "words": 11381,
+  "dim": 100,
+  "baseline": 0.232,
+  "pc1": 0.052,
+  "group_margin": 0.295,
+  "questions": 16,
+  "accuracy": 0.688,
+  "median_rank": 1.0,
+  "neighbours": {
+    "king": {
+      "group": "royalty",
+      "neighbours": [
+        [
+          "queen",
+          0.836
+        ],
+        [
+          "prince",
+          0.807
+        ],
+        [
+          "knight",
+          0.738
+        ],
+        [
+          "captain",
+          0.734
+        ],
+        [
+          "dragon",
+          0.696
+        ]
+      ]
+    },
+    "queen": {
+      "group": "royalty",
+      "neighbours": [
+        [
+          "king",
+          0.836
+        ],
+        [
+          "princess",
+          0.789
+        ],
+        [
+          "prince",
+          0.769
+        ],
+        [
+          "dragon",
+          0.647
+        ],
+        [
+          "captain",
+          0.64
+        ]
+      ]
+    },
+    "prince": {
+      "group": "royalty",
+      "neighbours": [
+        [
+          "king",
+          0.807
+        ],
+        [
+          "princess",
+          0.793
+        ],
+        [
+          "queen",
+          0.769
+        ],
+        [
+          "knight",
+          0.748
+        ],
+        [
+          "pirate",
+          0.669
+        ]
+      ]
+    },
+    "princess": {
+      "group": "royalty",
+      "neighbours": [
+        [
+          "prince",
+          0.793
+        ],
+        [
+          "queen",
+          0.789
+        ],
+        [
+          "fairy",
+          0.697
+        ],
+        [
+          "king",
+          0.673
+        ],
+        [
+          "dragon",
+          0.659
+        ]
+      ]
+    },
+    "mom": {
+      "group": "family",
+      "neighbours": [
+        [
+          "dad",
+          0.833
+        ],
+        [
+          "mommy",
+          0.829
+        ],
+        [
+          "mum",
+          0.817
+        ],
+        [
+          "mother",
+          0.801
+        ],
+        [
+          "parent",
+          0.744
+        ]
+      ]
+    },
+    "dad": {
+      "group": "family",
+      "neighbours": [
+        [
+          "mom",
+          0.833
+        ],
+        [
+          "mum",
+          0.753
+        ],
+        [
+          "mother",
+          0.702
+        ],
+        [
+          "parent",
+          0.683
+        ],
+        [
+          "daddy",
+          0.68
+        ]
+      ]
+    },
+    "brother": {
+      "group": "family",
+      "neighbours": [
+        [
+          "sister",
+          0.8
+        ],
+        [
+          "friend",
+          0.636
+        ],
+        [
+          "cousin",
+          0.632
+        ],
+        [
+          "boy",
+          0.56
+        ],
+        [
+          "servant",
+          0.547
+        ]
+      ]
+    },
+    "sister": {
+      "group": "family",
+      "neighbours": [
+        [
+          "brother",
+          0.8
+        ],
+        [
+          "friend",
+          0.614
+        ],
+        [
+          "cousin",
+          0.607
+        ],
+        [
+          "siblings",
+          0.567
+        ],
+        [
+          "helper",
+          0.542
+        ]
+      ]
+    },
+    "dog": {
+      "group": "animals",
+      "neighbours": [
+        [
+          "cat",
+          0.793
+        ],
+        [
+          "puppy",
+          0.761
+        ],
+        [
+          "rex",
+          0.738
+        ],
+        [
+          "spot",
+          0.686
+        ],
+        [
+          "wolf",
+          0.684
+        ]
+      ]
+    },
+    "cat": {
+      "group": "animals",
+      "neighbours": [
+        [
+          "dog",
+          0.793
+        ],
+        [
+          "kitty",
+          0.783
+        ],
+        [
+          "kitten",
+          0.768
+        ],
+        [
+          "monkey",
+          0.706
+        ],
+        [
+          "spider",
+          0.704
+        ]
+      ]
+    },
+    "bird": {
+      "group": "animals",
+      "neighbours": [
+        [
+          "birdie",
+          0.808
+        ],
+        [
+          "dove",
+          0.804
+        ],
+        [
+          "pigeon",
+          0.803
+        ],
+        [
+          "bug",
+          0.771
+        ],
+        [
+          "raven",
+          0.767
+        ]
+      ]
+    },
+    "fish": {
+      "group": "animals",
+      "neighbours": [
+        [
+          "shrimp",
+          0.784
+        ],
+        [
+          "seal",
+          0.764
+        ],
+        [
+          "ducks",
+          0.763
+        ],
+        [
+          "shark",
+          0.731
+        ],
+        [
+          "duck",
+          0.729
+        ]
+      ]
+    },
+    "bear": {
+      "group": "animals",
+      "neighbours": [
+        [
+          "teddy",
+          0.735
+        ],
+        [
+          "bunny",
+          0.731
+        ],
+        [
+          "rabbit",
+          0.727
+        ],
+        [
+          "mouse",
+          0.706
+        ],
+        [
+          "fox",
+          0.696
+        ]
+      ]
+    },
+    "rabbit": {
+      "group": "animals",
+      "neighbours": [
+        [
+          "bunny",
+          0.895
+        ],
+        [
+          "mouse",
+          0.849
+        ],
+        [
+          "fox",
+          0.829
+        ],
+        [
+          "squirrel",
+          0.828
+        ],
+        [
+          "frog",
+          0.802
+        ]
+      ]
+    },
+    "castle": {
+      "group": "places",
+      "neighbours": [
+        [
+          "palace",
+          0.776
+        ],
+        [
+          "tower",
+          0.761
+        ],
+        [
+          "fort",
+          0.74
+        ],
+        [
+          "igloo",
+          0.736
+        ],
+        [
+          "sandcastle",
+          0.733
+        ]
+      ]
+    },
+    "forest": {
+      "group": "places",
+      "neighbours": [
+        [
+          "woods",
+          0.89
+        ],
+        [
+          "jungle",
+          0.858
+        ],
+        [
+          "meadow",
+          0.855
+        ],
+        [
+          "swamp",
+          0.834
+        ],
+        [
+          "garden",
+          0.826
+        ]
+      ]
+    },
+    "garden": {
+      "group": "places",
+      "neighbours": [
+        [
+          "backyard",
+          0.905
+        ],
+        [
+          "forest",
+          0.826
+        ],
+        [
+          "yard",
+          0.821
+        ],
+        [
+          "meadow",
+          0.806
+        ],
+        [
+          "park",
+          0.801
+        ]
+      ]
+    },
+    "house": {
+      "group": "places",
+      "neighbours": [
+        [
+          "hut",
+          0.803
+        ],
+        [
+          "cabin",
+          0.786
+        ],
+        [
+          "yard",
+          0.751
+        ],
+        [
+          "cottage",
+          0.727
+        ],
+        [
+          "classroom",
+          0.707
+        ]
+      ]
+    },
+    "school": {
+      "group": "places",
+      "neighbours": [
+        [
+          "class",
+          0.752
+        ],
+        [
+          "preschool",
+          0.694
+        ],
+        [
+          "university",
+          0.682
+        ],
+        [
+          "daycare",
+          0.653
+        ],
+        [
+          "nursery",
+          0.615
+        ]
+      ]
+    },
+    "happy": {
+      "group": "feelings",
+      "neighbours": [
+        [
+          "relieved",
+          0.712
+        ],
+        [
+          "thrilled",
+          0.667
+        ],
+        [
+          "overjoyed",
+          0.643
+        ],
+        [
+          "glad",
+          0.641
+        ],
+        [
+          "pleased",
+          0.639
+        ]
+      ]
+    },
+    "sad": {
+      "group": "feelings",
+      "neighbours": [
+        [
+          "unhappy",
+          0.772
+        ],
+        [
+          "upset",
+          0.769
+        ],
+        [
+          "disappointed",
+          0.767
+        ],
+        [
+          "worried",
+          0.75
+        ],
+        [
+          "embarrassed",
+          0.746
+        ]
+      ]
+    },
+    "scared": {
+      "group": "feelings",
+      "neighbours": [
+        [
+          "frightened",
+          0.885
+        ],
+        [
+          "afraid",
+          0.816
+        ],
+        [
+          "worried",
+          0.812
+        ],
+        [
+          "confused",
+          0.791
+        ],
+        [
+          "fearful",
+          0.79
+        ]
+      ]
+    },
+    "angry": {
+      "group": "feelings",
+      "neighbours": [
+        [
+          "mad",
+          0.809
+        ],
+        [
+          "upset",
+          0.785
+        ],
+        [
+          "worried",
+          0.762
+        ],
+        [
+          "frustrated",
+          0.713
+        ],
+        [
+          "unhappy",
+          0.704
+        ]
+      ]
+    },
+    "big": {
+      "group": "size",
+      "neighbours": [
+        [
+          "huge",
+          0.846
+        ],
+        [
+          "large",
+          0.817
+        ],
+        [
+          "giant",
+          0.631
+        ],
+        [
+          "enormous",
+          0.593
+        ],
+        [
+          "wide",
+          0.585
+        ]
+      ]
+    },
+    "small": {
+      "group": "size",
+      "neighbours": [
+        [
+          "tiny",
+          0.786
+        ],
+        [
+          "large",
+          0.605
+        ],
+        [
+          "thin",
+          0.599
+        ],
+        [
+          "young",
+          0.576
+        ],
+        [
+          "big",
+          0.56
+        ]
+      ]
+    }
+  }
+}
