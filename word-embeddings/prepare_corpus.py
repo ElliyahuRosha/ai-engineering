@@ -11,6 +11,7 @@ OUTPUT = Path("data/tinystories_20m.txt")
 
 
 def main() -> None:
+    """Stream stories until the token budget is reached, then stop."""
     OUTPUT.parent.mkdir(exist_ok=True)
     stream = load_dataset("roneneldan/TinyStories", split="train", streaming=True)
 

@@ -1,8 +1,7 @@
-"""Score a trained run so different configurations can be compared.
+"""Score a trained run: neighbours, analogies, and the floor they have to beat.
 
-Reads `embeddings.npy` + `vocab.txt` from a run directory, writes `metrics.json`
-next to them, and prints a one-line summary. Point it at several runs with
-`--compare` to get a single table.
+Reads `embeddings.npy` and `vocab.txt` from a run directory, writes `metrics.json`
+next to them, and prints a one-line summary.
 """
 
 import argparse
@@ -10,7 +9,6 @@ import json
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 
 GROUPS = {
     "royalty": ["king", "queen", "prince", "princess"],
@@ -44,8 +42,11 @@ ANALOGIES = [
 
 
 def load(run: Path) -> tuple[np.ndarray, list[str], np.ndarray]:
+    """Return the raw matrix, the word list, and the row-normalised matrix."""
     embedding = np.load(run / "embeddings.npy")
     words = (run / "vocab.txt").read_text(encoding="utf-8").split("\n")
+    if len(words) != embedding.shape[0]:
+        raise ValueError(f"{run}: {len(words)} words but {embedding.shape[0]} vectors")
     unit = embedding / np.linalg.norm(embedding, axis=1, keepdims=True)
     return embedding, words, unit
 
@@ -60,8 +61,8 @@ def baseline(unit: np.ndarray, rng: np.random.Generator, draws: int = 5000) -> f
 def collapse_share(unit: np.ndarray) -> float:
     """Variance share of the first principal component.
 
-    A collapsed space puts almost everything on one direction; a healthy one
-    spreads it. Adam on this problem reached 0.98, Adagrad stays around 0.06.
+    A healthy space spreads its variance; a collapsed one (every vector pointing
+    the same way) puts almost all of it on one direction.
     """
     centered = unit - unit.mean(axis=0, keepdims=True)
     spectrum = np.linalg.svd(centered, compute_uv=False)
@@ -75,8 +76,7 @@ def group_margin(unit: np.ndarray, words: list[str]) -> float:
     picked = [index[w] for group in GROUPS.values() for w in group if w in index]
     block = unit[picked] @ unit[picked].T
     np.fill_diagonal(block, np.nan)
-    inside = []
-    edge = 0
+    inside, edge = [], 0
     for members in GROUPS.values():
         size = len(members)
         inside.append(np.nanmean(block[edge:edge + size, edge:edge + size]))
@@ -87,7 +87,7 @@ def group_margin(unit: np.ndarray, words: list[str]) -> float:
 def analogies(unit: np.ndarray, words: list[str]) -> dict:
     """Top-1 accuracy and median rank of the expected word, 3CosAdd style."""
     index = {word: i for i, word in enumerate(words)}
-    hits, ranks, used = 0, [], 0
+    hits, ranks, used, detail = 0, [], 0, []
     for a, b, c, expected in ANALOGIES:
         if not all(word in index for word in (a, b, c, expected)):
             continue
@@ -95,52 +95,49 @@ def analogies(unit: np.ndarray, words: list[str]) -> dict:
         query = unit[index[b]] - unit[index[a]] + unit[index[c]]
         scores = unit @ query
         scores[[index[a], index[b], index[c]]] = -np.inf
-        best = words[int(np.argmax(scores))]
-        hits += best == expected
+        gave = words[int(np.argmax(scores))]
+        hits += gave == expected
         ranks.append(int((scores > scores[index[expected]]).sum()) + 1)
+        detail.append({"question": f"{b} - {a} + {c}", "expected": expected, "gave": gave})
     return {
         "questions": used,
-        "accuracy": round(hits / used, 3) if used else None,
+        "accuracy": round(hits / used, 3) if used else 0.0,
         "median_rank": float(np.median(ranks)) if ranks else None,
+        "analogies_detail": detail,
     }
 
 
 def neighbours(unit: np.ndarray, words: list[str], k: int = 5) -> dict:
+    """Top-k neighbours for every word in the display groups."""
     index = {word: i for i, word in enumerate(words)}
     result = {}
-    for group, members in GROUPS.items():
-        for word in members:
-            if word not in index:
-                continue
-            scores = unit @ unit[index[word]]
-            best = np.argsort(-scores)[: k + 1]
-            result[word] = {
-                "group": group,
-                "neighbours": [[words[i], round(float(scores[i]), 3)]
-                               for i in best if i != index[word]][:k],
-            }
+    for word in [w for members in GROUPS.values() for w in members]:
+        if word not in index:
+            continue
+        scores = unit @ unit[index[word]]
+        best = np.argsort(-scores)[: k + 1]
+        result[word] = [[words[i], round(float(scores[i]), 3)]
+                        for i in best if i != index[word]][:k]
     return result
 
 
 def score(run: Path) -> dict:
     embedding, words, unit = load(run)
     rng = np.random.default_rng(0)
-    floor = baseline(unit, rng)
-    inside = group_margin(unit, words)
     metrics = {
         "run": run.name,
         "words": len(words),
         "dim": int(embedding.shape[1]),
-        "baseline": round(floor, 3),
+        "baseline": round(baseline(unit, rng), 3),
         "pc1": round(collapse_share(unit), 3),
-        "group_margin": round(inside, 3),
+        "group_margin": round(group_margin(unit, words), 3),
         **analogies(unit, words),
         "neighbours": neighbours(unit, words),
     }
-    config_path = run / "run.json"
-    if config_path.exists():
-        stored = json.loads(config_path.read_text(encoding="utf-8"))
-        for key in ("dim", "window", "negatives", "subsample", "batch", "lr", "steps"):
+    config = run / "run.json"
+    if config.exists():
+        stored = json.loads(config.read_text(encoding="utf-8"))
+        for key in ("dim", "window", "negatives", "batch", "lr", "steps"):
             if key in stored:
                 metrics[key] = stored[key]
     (run / "metrics.json").write_text(json.dumps(metrics, indent=2), encoding="utf-8")
@@ -149,21 +146,15 @@ def score(run: Path) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("runs", nargs="+", type=Path, help="run directories")
-    parser.add_argument("--compare", action="store_true", help="print one table for all runs")
+    parser.add_argument("run", type=Path, help="directory holding embeddings.npy and vocab.txt")
     args = parser.parse_args()
 
-    metrics = [score(run) for run in args.runs]
-    columns = ["run", "dim", "window", "negatives", "subsample", "steps",
-               "baseline", "pc1", "group_margin", "accuracy", "median_rank"]
-    table = pd.DataFrame(metrics)[[c for c in columns if c in metrics[0]]]
-    if args.compare or len(metrics) > 1:
-        print(table.to_string(index=False))
-    for row in metrics:
-        print(f"{row['run']}: baseline {row['baseline']:.3f}  pc1 {row['pc1']:.3f}  "
-              f"group margin {row['group_margin']:+.3f}  "
-              f"analogies {round(row['accuracy'] * row['questions'])}/{row['questions']}  "
-              f"median rank {row['median_rank']}")
+    metrics = score(args.run)
+    print(
+        f"{metrics['run']}: baseline {metrics['baseline']:.3f}  pc1 {metrics['pc1']:.3f}  "
+        f"group margin {metrics['group_margin']:+.3f}  "
+        f"analogies {round(metrics['accuracy'] * metrics['questions'])}/{metrics['questions']}"
+    )
 
 
 if __name__ == "__main__":

@@ -1,4 +1,10 @@
-"""Train skip-gram with negative sampling on TinyStories."""
+"""Train skip-gram with negative sampling on TinyStories.
+
+The defaults (dim 100, window 2, 5 negatives, three passes of 50M pairs) are the
+configuration behind the model in `outputs/`, so `python train.py` alone
+reproduces it. `--init` warm-starts from a saved matrix, `--resume` continues an
+exact checkpoint, `--fresh` overwrites one.
+"""
 
 import argparse
 import json
@@ -36,7 +42,6 @@ def settings(args: argparse.Namespace, vocab_size: int) -> dict:
         "dim": args.dim,
         "window": args.window,
         "negatives": args.negatives,
-        "subsample": args.subsample,
     }
 
 
@@ -107,16 +112,7 @@ def main(args: argparse.Namespace) -> None:
     rng = np.random.default_rng(args.seed)
     torch.manual_seed(args.seed)
 
-    # Negatives are drawn from the corpus as written, before subsampling.
     probabilities = we.negative_distribution(ids, len(vocab))
-    if args.subsample > 0:
-        before = ids.size
-        ids = we.subsample_ids(ids, args.subsample, rng)
-        print(
-            f"subsampled at {args.subsample:g}: {before / ids.size:.1f}x fewer tokens "
-            f"({ids.size:,} of {before:,} kept)",
-            flush=True,
-        )
 
     model = SkipGram(len(vocab), args.dim, sparse=device.type == "cpu").to(device)
     # Adam normalises every coordinate to ~lr per step, which collapses all
@@ -125,6 +121,20 @@ def main(args: argparse.Namespace) -> None:
 
     config = settings(args, len(vocab))
     start_step = 0
+    if args.init:
+        if args.resume:
+            raise SystemExit("--init and --resume both load weights; pick one")
+        saved = np.load(args.init)
+        if saved.shape != (len(vocab), args.dim):
+            raise ValueError(
+                f"{args.init} holds {saved.shape}, this run expects {(len(vocab), args.dim)}"
+            )
+        # A warm start has one matrix, not two: both tables begin from it.
+        with torch.no_grad():
+            weight = torch.as_tensor(saved, dtype=model.center.weight.dtype)
+            model.center.weight.copy_(weight)
+            model.context.weight.copy_(weight)
+        print(f"started from {args.init}", flush=True)
     if args.resume:
         start_step = load_checkpoint(checkpoint, model, optimizer, rng, config)
         print(f"resumed from step {start_step:,}", flush=True)
@@ -133,7 +143,7 @@ def main(args: argparse.Namespace) -> None:
     print(f"tokens={ids.size:,}  vocab={len(vocab):,}  steps={steps:,}", flush=True)
     print(
         f"dim={args.dim}  window={args.window}  negatives={args.negatives}  "
-        f"batch={args.batch}  lr={args.lr:g}  subsample={args.subsample:g}  device={device}",
+        f"batch={args.batch}  lr={args.lr:g}  device={device}",
         flush=True,
     )
 
@@ -202,18 +212,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--corpus", default="data/tinystories_20m.txt")
     parser.add_argument("--out", default="outputs", help="directory for embeddings and checkpoint")
     parser.add_argument("--dim", type=int, default=100)
-    parser.add_argument("--window", type=int, default=5)
+    parser.add_argument("--window", type=int, default=2)
     parser.add_argument("--negatives", type=int, default=5)
     parser.add_argument("--lr", type=float, default=0.1)
     parser.add_argument("--batch", type=int, default=8192)
-    parser.add_argument("--epochs", type=float, default=1.0, help="1 epoch = 50M pairs")
+    parser.add_argument("--epochs", type=float, default=3.0, help="1 epoch = 50M pairs")
     parser.add_argument("--steps", type=int, default=0, help="overrides --epochs when set")
-    parser.add_argument("--subsample", type=float, default=0.0,
-                        help="frequent-word threshold, 1e-4 typical; 0 disables")
     parser.add_argument("--min-count", type=int, default=5)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--save-every", type=int, default=1000)
+    parser.add_argument("--init", default=None,
+                        help="start from a saved embeddings.npy instead of random weights")
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--fresh", action="store_true")
     args = parser.parse_args()

@@ -3,8 +3,3 @@ scratch/
 runs/
 __pycache__/
 .ipynb_checkpoints/
-
-# the trained weights are 4.5 MB of binary; `python train.py --epochs 3 --window 2`
-# rebuilds an equivalent model. The interactive map is a result, not a model, so it ships.
-outputs/embeddings.npy
-outputs/vocab.txt

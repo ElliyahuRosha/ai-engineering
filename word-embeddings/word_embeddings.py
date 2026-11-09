@@ -1,11 +1,14 @@
-"""Word embeddings from scratch: corpus, vocabulary and training pairs."""
+"""Corpus, vocabulary and training pairs for the skip-gram model.
+
+The flow is: load_corpus -> tokenize -> build_vocab -> encode -> sample_pairs,
+with sample_negatives providing the words the corpus did *not* put together.
+"""
 
 import re
 from collections import Counter
 from pathlib import Path
 
 import numpy as np
-from scipy import sparse
 
 # ASCII letters only, with an optional internal apostrophe ("don't").
 # Non-English words, numbers and punctuation are dropped on purpose.
@@ -50,47 +53,12 @@ def encode(tokens: list[str], vocab: dict[str, int]) -> np.ndarray:
     )
 
 
-def cooccurrence(ids: list[int], vocab_size: int, window: int = 5) -> sparse.csr_matrix:
-    """Count symmetric word-context pairs inside a fixed window."""
-    ids = np.asarray(ids, dtype=np.int32)
-    rows: list[np.ndarray] = []
-    cols: list[np.ndarray] = []
-    for offset in range(1, window + 1):
-        # one diagonal of the matrix per offset, in both directions
-        rows.append(ids[:-offset])
-        cols.append(ids[offset:])
-        rows.append(ids[offset:])
-        cols.append(ids[:-offset])
-    counts = sparse.coo_matrix(
-        (np.ones(sum(chunk.size for chunk in rows), dtype=np.int32),
-         (np.concatenate(rows), np.concatenate(cols))),
-        shape=(vocab_size, vocab_size),
-    )
-    return counts.tocsr()
-
-
-def ppmi(counts: sparse.csr_matrix) -> sparse.csr_matrix:
-    """Positive PMI: keep only pairs that are more frequent than chance.
-
-    PMI(w, c) = log( count(w, c) * total / (count(w) * count(c)) )
-    """
-    total = float(counts.sum())
-    word_totals = np.asarray(counts.sum(axis=1)).ravel()
-    context_totals = np.asarray(counts.sum(axis=0)).ravel()
-
-    pairs = counts.tocoo()
-    observed = pairs.data * total
-    expected = word_totals[pairs.row] * context_totals[pairs.col]
-    pmi = np.log(observed / expected)
-    pmi = np.maximum(pmi, 0)  # negative PMI means "less often than chance"
-
-    return sparse.coo_matrix(
-        (pmi, (pairs.row, pairs.col)), shape=counts.shape
-    ).tocsr()
-
-
 def window_pairs(ids: np.ndarray, position: int, window: int = 5) -> list[int]:
-    """Return the context ids around one position, inside the window."""
+    """Return the context ids around one position, inside the window.
+
+    The deterministic counterpart of `sample_pairs`: used to show what a window
+    contains before sampling throws random ones away.
+    """
     start = max(position - window, 0)
     end = min(position + window + 1, len(ids))
     return [int(ids[i]) for i in range(start, end) if i != position]
@@ -121,25 +89,6 @@ def sample_pairs(
         filled += taken
 
     return centers, contexts
-
-
-def subsample_ids(
-    ids: np.ndarray, threshold: float, rng: np.random.Generator | None = None
-) -> np.ndarray:
-    """Drop frequent words, as word2vec does, so "the" stops eating the window.
-
-    Each token survives with probability sqrt(threshold / frequency), capped at 1.
-    `threshold` is a frequency: 1e-4 means "a word seen in more than one token in
-    ten thousand is cut down". Words below it are always kept.
-    """
-    rng = rng or np.random.default_rng()
-    counts = np.bincount(ids, minlength=int(ids.max()) + 1)
-    frequency = counts / counts.sum()
-    keep = np.ones_like(frequency)
-    common = frequency > threshold
-    keep[common] = np.sqrt(threshold / frequency[common])
-    keep[0] = 1.0  # UNK is a bucket, not a word: never drop it
-    return ids[rng.random(ids.size) < keep[ids]]
 
 
 def negative_distribution(
